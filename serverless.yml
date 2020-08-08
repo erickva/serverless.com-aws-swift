@@ -1,12 +1,12 @@
 service:
-  name: aws-swift-lambda-demo
+  name: boffa
 
 package:
-    artifact: .build/lambda/aws-swift-lambda-demo/lambda.zip
+    artifact: .build/lambda/HelloWorld/lambda.zip
 
-plugins:
-  - serverless-bundle
-  - serverless-pseudo-parameters
+# plugins:
+#   - serverless-bundle
+#   - serverless-pseudo-parameters
 
 provider:
     name: aws
@@ -26,5 +26,6 @@ functions:
     handler: HelloWorld
     events:
       - http:
-          method: GET
+          method: POST
           path: /hello
+          integration: LAMBDA
