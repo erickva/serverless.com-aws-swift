@@ -1,0 +1,30 @@
+service:
+  name: aws-swift-lambda-demo
+
+package:
+    artifact: .build/lambda/aws-swift-lambda-demo/lambda.zip
+
+plugins:
+  - serverless-bundle
+  - serverless-pseudo-parameters
+
+provider:
+    name: aws
+    runtime: provided
+    stage: ${opt:stage, 'dev'}
+    region: eu-north-1
+    iamRoleStatements:
+        - Effect: Allow
+          Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+          Resource: "*"
+  
+functions:
+  hello:
+    handler: HelloWorld
+    events:
+      - http:
+          method: GET
+          path: /hello
