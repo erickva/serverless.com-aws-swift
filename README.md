@@ -24,3 +24,5 @@ If all goes well you will see the POST endpoint you can call from Postman. It re
     "name": "Erick"
 }
 ```
+
+To open the whole project on Xcode just open the `Package.swift` file.
