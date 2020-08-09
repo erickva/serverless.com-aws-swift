@@ -4,15 +4,15 @@ service:
 package:
     artifact: .build/lambda/HelloWorld/lambda.zip
 
-# plugins:
-#   - serverless-bundle
-#   - serverless-pseudo-parameters
-
 provider:
     name: aws
+    httpApi:
+        payload: '2.0'
     runtime: provided
     stage: ${opt:stage, 'dev'}
     region: eu-north-1
+    logs:
+        httpApi: true
     iamRoleStatements:
         - Effect: Allow
           Action:
@@ -20,12 +20,20 @@ provider:
               - logs:CreateLogStream
               - logs:PutLogEvents
           Resource: "*"
-  
+
 functions:
-  hello:
-    handler: HelloWorld
-    events:
-      - http:
-          method: POST
-          path: /hello
-          integration: LAMBDA
+    TalkingAboutPost:
+        handler: TalkingAboutPost
+        memorySize: 128
+        events:
+        - httpApi:
+            method: POST
+            path: /talkingabout
+    
+    HiredPost:
+        handler: HiredPost
+        memorySize: 128
+        events:
+        - httpApi:
+            method: POST
+            path: /hired

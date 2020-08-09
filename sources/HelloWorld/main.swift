@@ -12,35 +12,120 @@
 //
 //===----------------------------------------------------------------------===//
 import AWSLambdaRuntime
+import AWSLambdaEvents
+import Foundation
+import NIO
 
-// IMPORTANT!!
-// When using API Gateway, I don't know why, but
-// it will wrap our JSON request into a property called "body"
-// This means, if you are passing {"name":"My Name"} in your request,
-// API Gateway will transform it into {"body":{"name":"My Name"}, ...}
-// This is why we need to extract our Object from body.
-// WARNING: Because of this, when testing the function in AWS Console,
-// where you pass a proper JSON, without the "body", your test will fail.
-// This will only work when calling through the API Gateway
-// A custom Decodable would have to be implemented if you want it to work
-// in all scenarios.
+let jsonHeaders = [
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "OPTIONS,GET,POST,PUT,DELETE",
+    "Access-Control-Allow-Credentials": "true",
+]
 
-private struct Request: Codable {
-    let person: Person
-    enum CodingKeys: String, CodingKey {
-      case person = "body"
+Lambda.run(APIGatewayProxyLambda())
+
+struct APIGatewayProxyLambda: EventLoopLambdaHandler {
+    public typealias In = APIGateway.V2.Request
+    public typealias Out = APIGateway.V2.Response
+
+    public func handle(context: Lambda.Context, event: APIGateway.V2.Request) -> EventLoopFuture<APIGateway.V2.Response> {
+        context.logger.debug("hello, api gateway!")
+        guard let handler = Handler.current else {
+            return context.eventLoop.makeFailedFuture(ApiError.whatever)
+        }
+        
+        switch handler {
+        case .talkingAboutPost:
+            let talkingAboutPost = TalkingAboutPost()
+            return talkingAboutPost.handle(context: context, event: event)
+        case .hiredPost:
+            let hiredPost = HiredPost()
+            return hiredPost.handle(context: context, event: event)
+        }
     }
 }
 
-private struct Person: Codable {
-  let name: String
+struct TalkingAboutPost: EventLoopLambdaHandler {
+    
+    typealias In = APIGateway.V2.Request
+    typealias Out = APIGateway.V2.Response
+    
+    struct Person: Codable {
+        let name: String
+    }
+    
+    struct MessageResponse: Codable {
+        let message: String
+    }
+    
+    
+    func handle(context: Lambda.Context, event: APIGateway.V2.Request) -> EventLoopFuture<APIGateway.V2.Response> {
+
+        if let jsonData = event.body?.data(using: .utf8) {
+            let person = try! JSONDecoder().decode(Person.self, from: jsonData)
+            
+            
+            var body: String = "{}"
+            let reponse = MessageResponse(message: "We are talking about: \(person.name)")
+            if let data = try? JSONEncoder().encode(reponse) {
+                body = String(data: data, encoding: .utf8) ?? body
+            }
+            
+            return context.eventLoop.makeSucceededFuture(
+                APIGateway.V2.Response(
+                    statusCode: .ok,
+                    headers: jsonHeaders,
+                    body: body
+                )
+            )
+        } else {
+            return context.eventLoop.makeFailedFuture(ApiError.whatever)
+        }
+    }
 }
 
-private struct Response: Codable {
-  let message: String
+struct HiredPost: EventLoopLambdaHandler {
+    
+    typealias In = APIGateway.V2.Request
+    typealias Out = APIGateway.V2.Response
+    
+    struct Person: Codable {
+        let name: String
+    }
+    
+    struct MessageResponse: Codable {
+        let message: String
+    }
+    
+    
+    func handle(context: Lambda.Context, event: APIGateway.V2.Request) -> EventLoopFuture<APIGateway.V2.Response> {
+
+        if let jsonData = event.body?.data(using: .utf8) {
+            let person = try! JSONDecoder().decode(Person.self, from: jsonData)
+            
+            
+            var body: String = "{}"
+            let reponse = MessageResponse(message: "\(person.name) is hired!")
+            if let data = try? JSONEncoder().encode(reponse) {
+                body = String(data: data, encoding: .utf8) ?? body
+            }
+            
+            return context.eventLoop.makeSucceededFuture(
+                APIGateway.V2.Response(
+                    statusCode: .ok,
+                    headers: jsonHeaders,
+                    body: body
+                )
+            )
+        } else {
+            return context.eventLoop.makeFailedFuture(ApiError.whatever)
+        }
+    }
 }
 
-Lambda.run { (context, request: Request, callback: @escaping (Result<Response, Error>) -> Void) in
-    context.logger.debug("Alo vc!!")
-    callback(.success(Response(message: "\(request.person.name)")))
+
+
+enum ApiError: Error {
+    case whatever
 }
