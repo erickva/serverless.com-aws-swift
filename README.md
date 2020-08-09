@@ -1,8 +1,8 @@
 # serverless.com-aws-swift
 Serverless.com Template for AWS Swift Runtime
 
-I am currently working on this~~, so do not use~~.
-~~IT DOES NOT WORK YET~~
+I am currently working on this ~~, so do not use.
+IT DOES NOT WORK YET~~.
 
 Make sure you have installed Docker, Serverless Framework and AWS CLI.
 
